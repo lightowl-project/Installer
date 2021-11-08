@@ -1,0 +1,69 @@
+{
+    "vhosts": [
+        {
+            "name": "\/"
+        }
+    ],
+    "users": [
+        {
+            "name": "lightowl",
+            "password_hash": "{{ password }}",
+            "hashing_algorithm": "rabbit_password_hashing_sha256",
+            "tags": "administrator"
+        }
+    ],
+    "exchanges": [
+        {
+            "name": "lightowl",
+            "vhost": "/",
+            "type": "fanout",
+            "durable": true,
+            "auto_delete": false,
+            "internal": false,
+            "arguments": {}
+        }
+    ],
+    "queues": [
+        {
+            "name": "lightowl",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {}
+        },
+        {
+            "name": "alerting",
+            "vhost": "/",
+            "durable": true,
+            "auto_delete": false,
+            "arguments": {}
+        }
+    ],
+    "bindings": [
+        {
+            "source": "lightowl",
+            "vhost": "/",
+            "destination": "lightowl",
+            "destination_type": "queue",
+            "routing_key": "*",
+            "arguments": {}
+        },
+        {
+            "source": "lightowl",
+            "vhost": "/",
+            "destination": "alerting",
+            "destination_type": "queue",
+            "routing_key": "*",
+            "arguments": {}
+        }
+    ],
+    "permissions": [
+        {
+            "user": "lightowl",
+            "vhost": "\/",
+            "configure": ".*",
+            "write": ".*",
+            "read": ".*"
+        }
+    ]
+}

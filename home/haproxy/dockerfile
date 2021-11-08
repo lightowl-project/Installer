@@ -1,0 +1,5 @@
+FROM haproxy:latest
+
+RUN apt update && apt -y upgrade
+USER root
+COPY ./haproxy.cfg /usr/local/etc/haproxy/haproxy.cfg

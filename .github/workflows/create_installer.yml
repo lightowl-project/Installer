@@ -1,0 +1,28 @@
+name: Create Agents Packages
+
+on:
+  push:
+    branches: [release-*]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: 🎉 Build
+        run: |
+          sudo apt install makeself -y
+          chmod +x ./install.sh
+          makeself . ./lightowl_installer_v0_1.run "LightOwl Server Installer" ./install.sh
+          mkdir build
+          mv ./lightowl_installer_v0_1.run ./build/
+
+      - name: 📂 Sync files
+        uses: SamKirkland/FTP-Deploy-Action@4.1.0
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PWD }}
+          server-dir: www/wp-content/uploads/installer/
+          local-dir: ./build/

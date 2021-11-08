@@ -1,0 +1,167 @@
+version: "3"
+services:
+    lightowl:
+        image: raznak/lightowl-server:latest
+        restart: on-failure
+        command: >
+             /bin/bash -c "
+                while ! nc -z rabbitmq 5672;
+                do
+                    sleep 2;
+                done;
+                uvicorn main:app --host 0.0.0.0 --port 8000 --reload"
+        volumes:
+            - /etc/ssl/lightowl/:/etc/ssl/lightowl/
+        depends_on:
+            - mongo
+            - rabbitmq
+            - influxdb
+            - redis
+        healthcheck:
+            test: curl --fail http://localhost:8000/docs || exit 1
+            interval: 10s
+            timeout: 10s
+            retries: 3
+        environment: 
+            mongodb_url: mongo
+            mongodb_database: lightowl
+            rabbitmq_url: rabbitmq
+            rabbitmq_port: 5672
+            rabbitmq_user: lightowl
+            rabbitmq_password: {{rabbit_password}}
+            redis_url: redis
+            redis_port: 6379
+            debug: 'false'
+            influx_url: influxdb
+            influx_token: {{ influx_token }}
+            influx_database: lightowl
+            vue_app_base_api:
+            vue_app_websocket_api: 
+   
+    worker:
+        image: raznak/lightowl-worker:latest
+        volumes:
+            - /etc/ssl/lightowl/:/etc/ssl/lightowl/
+        command: >
+             /bin/bash -c "
+                while ! nc -z rabbitmq 5672;
+                do
+                    sleep 2;
+                done;
+                celery worker -A worker -l info"
+        depends_on:
+            - mongo
+            - rabbitmq
+            - influxdb
+        environment: 
+            mongodb_url: mongo
+            mongodb_database: lightowl
+            mongodb_ssl: 'true'
+            rabbitmq_url: rabbitmq
+            rabbitmq_port: 5672
+            rabbitmq_user: lightowl
+            rabbitmq_password: {{rabbit_password}}
+            redis_url: redis
+            redis_port: 6379
+            debug: 'true'
+            influx_url: influxdb
+            influx_token: {{ influx_token }}
+            influx_database: lightowl
+
+    haproxy:
+        image: lightowl-haproxy
+        build:
+            context: /home/haproxy/
+            dockerfile: /home/haproxy/dockerfile
+        ports:
+            - 5671:5671
+            - 443:443
+        volumes:
+            - /etc/ssl/lightowl/:/etc/ssl/lightowl/
+        depends_on: 
+            - lightowl
+            - rabbitmq
+    
+    mongo:
+        image: mongo:4.4
+        hostname: mongodb.lightowl
+        volumes:
+            - mongodata:/data/db
+    
+    redis:
+        image: redis
+        volumes:
+            - redis_data:/data
+
+    rabbitmq:
+        image: lightowl_rabbitmq
+        build:
+            context: /home/rabbitmq/
+            dockerfile: /home/rabbitmq/rabbitmq.dockerfile
+        volumes:
+            - rabbitmq_data:/var/lib/rabbitmq
+        depends_on: 
+            - influxdb
+        ports:
+            - 15672:15672
+    
+    collector:
+        image: raznak/lightowl-collector:latest
+        command: >
+             /bin/bash -c "
+                while ! nc -z rabbitmq 5672;
+                do
+                    sleep 2;
+                done;
+                telegraf -config /etc/telegraf/telegraf.conf -config-directory /etc/telegraf/telegraf.d"
+        volumes:
+            - /home/telegraf/:/etc/telegraf/:ro
+            - /var/run/docker.sock:/var/run/docker.sock
+            - /etc/ssl/lightowl:/etc/ssl/lightowl
+            - /:/hostfs:ro
+            - /etc:/hostfs/etc:ro
+            - /proc:/hostfs/proc:ro
+            - /sys:/hostfs/sys:ro
+            - /var/run/utmp:/var/run/utmp:ro
+        environment:
+            - DOCKER_INFLUXDB_INIT_ORG=lightowl
+            - DOCKER_INFLUXDB_INIT_BUCKET=lightowlbucket
+            - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=influxtoken
+        depends_on:
+            - influxdb
+            - rabbitmq
+
+    influxdb:
+        image: influxdb:1.8
+        hostname: influxdb.lightowl
+        environment: 
+            - INFLUXDB_DB=lightowl
+        volumes:
+            - /home/influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
+            - /etc/ssl/lightowl:/etc/ssl/lightowl
+            - influxdata:/var/lib/influxdb:rw
+
+    grafana:
+        image: grafana/grafana
+        ports:
+            - 3000:3000
+        depends_on: 
+            - influxdb
+        volumes:
+            - grafanadata://var/lib/grafana
+            - /home/grafana:/etc/grafana
+            - /etc/ssl/lightowl/:/etc/ssl/lightowl/
+
+volumes:
+    grafanadata:
+        driver: local
+    mongodata:
+        driver: local
+    influxdata:
+        driver: local
+    chronograf_data:
+        driver: local
+    rabbitmq_data:
+        driver: local
+    redis_data:
+        driver: local
