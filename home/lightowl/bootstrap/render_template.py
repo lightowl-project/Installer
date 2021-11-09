@@ -42,8 +42,8 @@ def lightowl(password: str):
 
     j2_template = jinja2.Template(template, autoescape=True)
 
-    choices: tuple = ("0.1", "latest")
-    version = enquiries.choose(choices)
+    choices: tuple = ("latest", "0.1")
+    version = enquiries.choose("Version to install: ", choices)
 
     with open("/home/lightowl/docker-compose.yml", "w") as f:
         f.write(j2_template.render({
