@@ -30,46 +30,51 @@ else
    exit 1
 fi
 
-/usr/bin/echo ""
-/usr/bin/echo -n "Admin Password: " 
-read -s password
-/usr/bin/echo ""
-/usr/bin/echo -n "Confirm Password: "
-read -s confirm_password
-/usr/bin/echo ""
+password=admin
+ip_address=172.16.1.186
+# /usr/bin/echo ""
+# /usr/bin/echo -n "Admin Password: " 
+# read -s password
+# /usr/bin/echo ""
+# /usr/bin/echo -n "Confirm Password: "
+# read -s confirm_password
+# /usr/bin/echo ""
 
-while [[ true ]]
-do
-    if [[ "$password" == "$confirm_password" ]]
-    then
-      break
-    fi
+# while [[ true ]]
+# do
+#    if [[ "$password" != "" ]]
+#    then
+#       if [[ "$password" == "$confirm_password" ]]
+#       then
+#          break
+#       fi
+#    fi
 
-   /usr/bin/echo ""
-   echo "Passwords mismatch"
-   echo -n "Admin Password: " 
-   read -s password
-   /usr/bin/echo ""
-   echo -n "Confirm Password: "
-   read -s confirm_password
-   echo ""
-done
+#    /usr/bin/echo ""
+#    echo "Passwords mismatch or is empty"
+#    echo -n "Admin Password: " 
+#    read -s password
+#    /usr/bin/echo ""
+#    echo -n "Confirm Password: "
+#    read -s confirm_password
+#    echo ""
+# done
 
-/usr/bin/echo ""
-/usr/bin/echo -n "IP Address: "
-read ip_address
-while [[ true ]]
-do
-   if [[ $ip_address =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-      break
-   else
-      /usr/bin/echo ""
-      /usr/bin/echo "Invalid IP Address"
-      /usr/bin/echo -n "IP Address: "
-      read ip_address
-   fi
-done
-/usr/bin/echo ""
+# /usr/bin/echo ""
+# /usr/bin/echo -n "IP Address: "
+# read ip_address
+# while [[ true ]]
+# do
+#    if [[ $ip_address =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+#       break
+#    else
+#       /usr/bin/echo ""
+#       /usr/bin/echo "Invalid IP Address"
+#       /usr/bin/echo -n "IP Address: "
+#       read ip_address
+#    fi
+# done
+# /usr/bin/echo ""
 
 /usr/sbin/addgroup lightowl
 sha_password=$(/usr/bin/openssl passwd -1 ${password})
@@ -92,7 +97,7 @@ cd /home/lightowl
    -v /etc/ssl/lightowl:/etc/ssl/lightowl \
    --name lightowl_install \
    lightowl:install \
-   bash /home/lightowl/bootstrap/bootstrap.sh $rabbit_password
+   bash /home/lightowl/bootstrap/bootstrap.sh $rabbit_password $ip_address
 
 # Fix rights
 /usr/bin/chown -R lightowl:lightowl /home/haproxy

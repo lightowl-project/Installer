@@ -1,4 +1,4 @@
-from x509 import gen_ca, gen_cert
+from x509 import mk_ca_cert_files, mk_signed_cert_files
 import subprocess
 import secrets
 import sys
@@ -7,13 +7,13 @@ import os
 
 if __name__ == "__main__":
     ip_address = sys.argv[1]
-    pki_config: dict = {
+
+    pki = {
         "country": "FR",
         "state": "59",
         "city": "Lille",
         "organization": "lightowl.io",
-        "organizational_unit": "Internal PKI",
-        "commonName": "LIGHTOWL_PKI_" + secrets.token_urlsafe(16)
+        "organizational_unit": "Internal PKI"
     }
 
     """ Nothing to do if PKI is already set up """
@@ -23,17 +23,27 @@ if __name__ == "__main__":
 
         """ Build CA Certificate """
         print("Creating CA certificate and private key")
-        
-        ca_cert, ca_key = gen_ca(pki_config)
+        ca_name = "LIGHTOWL_PKI_" + secrets.token_urlsafe(16)
+        cacert, cakey = mk_ca_cert_files(
+            ca_name,
+            pki["country"],
+            pki["state"],
+            pki["city"],
+            pki["organization"],
+            pki["organizational_unit"]
+        )
 
     """ Build node certificate (overwrite if it exist) """
     hostname = subprocess.check_output(['hostname']).strip().decode('utf-8')
-    cert, key = gen_cert(
+    cert, key = mk_signed_cert_files(
         hostname,
-        ca_cert,
-        ca_key,
-        ip_address=ip_address,
-        commonName=pki_config["commonName"]
+        ip_address,
+        pki["country"],
+        pki["state"],
+        pki["city"],
+        pki["organization"],
+        pki["organizational_unit"],
+        2
     )
 
     """ Generate Diffie Hellman configuration """

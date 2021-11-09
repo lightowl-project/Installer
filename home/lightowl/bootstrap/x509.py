@@ -1,96 +1,189 @@
-from OpenSSL import crypto
-import random
-import sys
+from M2Crypto import X509, EVP, RSA, ASN1
+import time
 
 
-def gen_ca(config: dict) -> tuple:
-    # create a key pair
-    k = crypto.PKey()
-    k.generate_key(crypto.TYPE_RSA, 4096)
-
-    # create a self-signed cert
-    cert = crypto.X509()
-    cert.get_subject().C = config["country"]
-    cert.get_subject().ST = config["state"]
-    cert.get_subject().L = config["city"]
-    cert.get_subject().O = config["organization"]  # noqa: E741
-    cert.get_subject().OU = config["organization"]
-    cert.get_subject().CN = "lightowl.io"
-    cert.get_subject().emailAddress = "contact@lightowl.io"
-    cert.set_serial_number(0)
-    cert.gmtime_adj_notBefore(0)
-    cert.gmtime_adj_notAfter(315360000)
-    cert.set_issuer(cert.get_subject())
-    cert.set_pubkey(k)
-    cert.sign(k, 'sha512')
-
-    cert = crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8")
-    key = crypto.dump_privatekey(crypto.FILETYPE_PEM, k).decode("utf-8")
-
-    with open("/etc/ssl/lightowl/ca.crt", "w") as f:
-        f.write(cert)
-
-    with open("/etc/ssl/lightowl/ca.key", "w") as f:
-        f.write(key)
-
-    return cert, key
+def mk_ca_issuer(CN, C, ST, L, O, OU):
+    """Our default CA issuer name.
+    :param CN: Common Name field
+    :param C: Country Name
+    :param ST: State or province name
+    :param L: Locality
+    :param O: Organization
+    :param OU: Organization Unit
+    :return:
+    """
+    issuer = X509.X509_Name()
+    issuer.C = C
+    issuer.CN = CN
+    issuer.ST = ST
+    issuer.L = L
+    issuer.O = O
+    issuer.OU = OU
+    return issuer
 
 
-def gen_cert(ca_key, ca_cert, ip_address, commonName):
-    '''Create an CERT signed by an given CA'''
+def mk_cert_valid(cert, days=3652):
+    """Make a cert valid from now and til 'days' from now.
+    :param cert: cert to make valid
+    :param days: number of days cert is valid for from now.
+    """
+    t = int(time.time())
+    now = ASN1.ASN1_UTCTIME()
+    now.set_time(t)
+    expire = ASN1.ASN1_UTCTIME()
+    expire.set_time(t + days * 24 * 60 * 60)
+    cert.set_not_before(now)
+    cert.set_not_after(expire)
 
-    # Generate a CSR
-    # http://docs.ganeti.org/ganeti/2.14/html/design-x509-ca.html
-    key = crypto.PKey()
-    key.generate_key(crypto.TYPE_RSA, 4096)
 
-    req = crypto.X509Req()
-    req.get_subject().CN = commonName
-    req.set_pubkey(key)
-    req.sign(key, "sha512")
+def mk_request(bits, CN, C, ST, L, O, OU):
+    """Create a X509 request with the given number of bits in they key.
+    :param bits: number of RSA key bits
+    :param CN: Common Name field
+    :param C: Country Name
+    :param ST: State or province name
+    :param L: Locality
+    :param O: Organization
+    :param OU: Organization Unit
+    :returns: a X509 request and the private key (EVP)
+    """
+    pk = EVP.PKey()
+    x = X509.Request()
+    rsa = RSA.gen_key(bits, 65537, lambda: None)
+    pk.assign_rsa(rsa)
+    x.set_pubkey(pk)
 
-    key = crypto.dump_privatekey(crypto.FILETYPE_PEM, key).decode("utf-8")
+    subject_name = X509.X509_Name()
+    subject_name.add_entry_by_txt(field="CN", type=ASN1.MBSTRING_ASC, entry=CN or "", len=-1, loc=-1, set=0)
+    subject_name.add_entry_by_txt(field="C", type=ASN1.MBSTRING_ASC, entry=C or "", len=-1, loc=-1, set=0)
+    subject_name.add_entry_by_txt(field="ST", type=ASN1.MBSTRING_ASC, entry=ST or "", len=-1, loc=-1, set=0)
+    subject_name.add_entry_by_txt(field="L", type=ASN1.MBSTRING_ASC, entry=L or "", len=-1, loc=-1, set=0)
+    subject_name.add_entry_by_txt(field="O", type=ASN1.MBSTRING_ASC, entry=O or "", len=-1, loc=-1, set=0)
+    subject_name.add_entry_by_txt(field="OU", type=ASN1.MBSTRING_ASC, entry=OU or "", len=-1, loc=-1, set=0)
+    x.set_subject_name(subject_name)
 
-    ca_cert = crypto.load_certificate(
-        crypto.FILETYPE_PEM, bytes(ca_cert, 'utf-8')
+    x.sign(pk, 'sha256')
+    return x, pk
+
+
+def mk_ca_cert(CN, C, ST, L, O, OU):
+    """Make a CA certificate.
+    :param CN: Common Name field
+    :param C: Country Name
+    :param ST: State or province name
+    :param L: Locality
+    :param O: Organization
+    :param OU: Organization Unit
+    :returns: the certificate, private key and public key.
+    """
+    req, pk = mk_request(2048, CN, C, ST, L, O, OU)
+    pkey = req.get_pubkey()
+    cert = X509.X509()
+    cert.set_serial_number(1)
+    cert.set_version(2)
+    mk_cert_valid(cert, 7200)
+    cert.set_issuer(mk_ca_issuer(CN, C, ST, L, O, OU))
+    cert.set_subject(cert.get_issuer())
+    cert.set_pubkey(pkey)
+    cert.add_ext(X509.new_extension('basicConstraints', 'CA:TRUE'))
+    cert.add_ext(X509.new_extension(
+        'subjectKeyIdentifier', str(cert.get_fingerprint()))
     )
-    ca_key = crypto.load_privatekey(
-        crypto.FILETYPE_PEM, bytes(ca_key, 'utf-8')
-    )
 
-    IP_SAN: str = f"IP:{ip_address}"
-
-    # Generate Cert
-    cert = crypto.X509()
-    cert.set_subject(req.get_subject())
-    cert.set_serial_number(random.randint(0, sys.maxsize))
-    cert.gmtime_adj_notBefore(0)
-    cert.gmtime_adj_notAfter(1*365*24*60*60)
-    cert.add_extensions([crypto.X509Extension(b"subjectAltName", False, bytes(IP_SAN))])
-    cert.set_issuer(ca_cert.get_subject())
-    cert.set_pubkey(req.get_pubkey())
-    cert.sign(ca_key, "sha512")  # Sign with CA
-
-    cert = crypto.dump_certificate(crypto.FILETYPE_PEM, cert).decode("utf-8")
-
-    with open("/etc/ssl/lightowl/server.crt", 'w') as f:
-        f.write(cert)
-
-    with open("/etc/ssl/lightowl/server.key", 'w') as f:
-        f.write(key)
-
-    with open("/etc/ssl/lightowl/server.pem", "w") as f:
-        f.write(f"{cert}{key}")
+    cert.sign(pk, 'sha256')
+    return cert, pk, pkey
 
 
+def mk_cert(serial, ip_address):
+    """Make a certificate.
+    :return: a new cert.
+    """
+    cert = X509.X509()
+    cert.set_serial_number(serial)
+    cert.set_version(2)
+    mk_cert_valid(cert, 1825)
+    cert.add_ext(X509.new_extension(
+        'keyUsage', 'digitalSignature, keyEncipherment'
+    ))
+    cert.add_ext(X509.new_extension(
+        'nsComment', 'Issued by LightOwl PKI'
+    ))
+    cert.add_ext(X509.new_extension(
+        'extendedKeyUsage', 'serverAuth, clientAuth'
+    ))
 
-# if __name__ == "__main__":
-#     ca_cert, ca_key = gen_ca("FR", "NORD", "LILLE", "lightowl.io", "lightowl.io", "lightowl.io", "contact&lightowl.io", 0, 0, 315360000)
+    cert.add_ext(X509.new_extension(
+        "subjectAltName", f"IP:{ip_address}"
+    ))
 
-#     with open("/etc/ssl/lightowl/ca.crt", "w") as f:
-#         f.write(ca_cert)
-#     with open("/etc/ssl/lightowl/ca.key", "w") as f:
-#         f.write(ca_key)
+    return cert
 
-#     cert, key = gen_cert(ca_key=ca_key, ca_cert=ca_cert, commonName="server")
 
+def mk_ca_cert_files(CN, C, ST, L, O, OU):
+    """Create CA cacert files (cert + key).
+    :param CN: Common Name field
+    :param C: Country Name
+    :param ST: State or province name
+    :param L: Locality
+    :param O: Organization
+    :param OU: Organization Unit
+    """
+    ca_cert, pk1, pkey = mk_ca_cert(CN, C, ST, L, O, OU)
+
+    # Save files
+    ca_cert.save_pem("/etc/ssl/lightowl/ca.pem")
+    pk1.save_key("/etc/ssl/lightowl/ca.key", cipher=None)
+    return ca_cert, pk1
+
+
+def mk_signed_cert(CN, C, ST, L, O, OU, serial, ip_address):
+    """Create certificate (cert+key) signed by the given CA, and with the
+    given parameters.
+    :param CN: Common Name field
+    :param C: Country Name
+    :param ST: State or province name
+    :param L: Locality
+    :param O: Organization
+    :param OU: Organization Unit
+    :param serial: Certificate serial number
+    :return: Certificate and certificate key
+    """
+    cert_req, pk2 = mk_request(2048, CN, C, ST, L, O, OU)
+    ca_cert = X509.load_cert("/etc/ssl/lightowl/ca.pem")
+    pk1 = EVP.load_key("/etc/ssl/lightowl/ca.key")
+
+    # Sign certificate
+    cert = mk_cert(serial, ip_address)
+    cert.set_subject(cert_req.get_subject())
+    cert.set_pubkey(cert_req.get_pubkey())
+    cert.set_issuer(ca_cert.get_issuer())
+    cert.sign(pk1, 'sha256')
+
+    return cert, pk2
+
+
+def mk_signed_cert_files(CN, ip_address, C='fr', ST='', L='', O='', OU='', serial=1):
+    """Create certificate files (cert+key) signed by the given CA, and with the
+    given parameters.
+    :param CN: Common Name field
+    :param C: Country Name
+    :param ST: State or province name
+    :param L: Locality
+    :param O: Organization
+    :param OU: Organization Unit
+    """
+    cert, pk2 = mk_signed_cert(CN, C, ST, L, O, OU, serial, ip_address)
+
+    # Writing PEM File for MongoDB
+    with open("/etc/ssl/lightowl/server.pem", 'wb') as f:
+        cert_and_key = cert.as_pem() + pk2.as_pem(None)
+        f.write(cert_and_key)
+
+    # Writing Cert and Key
+    with open("/etc/ssl/lightowl/server.crt", 'wb') as f_cert:
+        f_cert.write(cert.as_pem())
+
+    with open("/etc/ssl/lightowl/server.key", 'wb') as f_key:
+        f_key.write(pk2.as_pem(None))
+
+    return cert, pk2
