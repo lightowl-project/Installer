@@ -1,7 +1,7 @@
 version: "3"
 services:
     lightowl:
-        image: raznak/lightowl-server:{{version}}
+        image: lightowlproject/server:{{version}}
         restart: on-failure
         command: >
              /bin/bash -c "
@@ -36,7 +36,7 @@ services:
             influx_database: lightowl
    
     worker:
-        image: raznak/lightowl-worker:{{version}}
+        image: lightowlproject/worker:{{version}}
         volumes:
             - /etc/ssl/lightowl/:/etc/ssl/lightowl/
         command: >
@@ -102,7 +102,7 @@ services:
             - 15672:15672
     
     collector:
-        image: raznak/lightowl-collector:{{version}}
+        image: lightowlproject/collector:{{version}}
         command: >
              /bin/bash -c "
                 while ! nc -z rabbitmq 5672;
