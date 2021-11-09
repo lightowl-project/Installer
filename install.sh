@@ -34,8 +34,18 @@ fi
 /usr/bin/echo -n "Admin Password: " 
 read -s password
 /usr/bin/echo ""
-/usr/bin/echo -n "IP Address: "
-read ip_address
+
+ip_address=null
+ip_valid=false
+while [[ ip_valid -eq false ]]
+do
+   if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      break
+   else
+      /usr/bin/echo -n "IP Address: "
+      read ip_address
+   fi
+done
 /usr/bin/echo ""
 
 /usr/sbin/addgroup lightowl
