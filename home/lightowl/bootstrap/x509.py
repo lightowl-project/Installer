@@ -105,7 +105,7 @@ def mk_cert(serial):
         'keyUsage', 'digitalSignature, keyEncipherment'
     ))
     cert.add_ext(X509.new_extension(
-        'nsComment', 'Issued by VulturePKI'
+        'nsComment', 'Issued by LightOwlPKI'
     ))
     cert.add_ext(X509.new_extension(
         'extendedKeyUsage', 'serverAuth, clientAuth'

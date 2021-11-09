@@ -42,5 +42,5 @@ if __name__ == "__main__":
         2
     )
 
-    """ Generate Diffie hellman configuration """
+    """ Generate Diffie Hellman configuration """
     os.system("openssl dhparam -out /etc/ssl/lightowl/dh2048.pem 2048")
