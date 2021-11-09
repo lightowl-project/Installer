@@ -3,6 +3,7 @@ import sys
 import jinja2
 import base64
 import hashlib
+import enquiries
 
 
 def rabbitmq(password: str):
@@ -41,11 +42,8 @@ def lightowl(password: str):
 
     j2_template = jinja2.Template(template, autoescape=True)
 
-    version = ""
-    while version not in ("0.1", "latest"):
-        version = input("Version to install [latest]: ")
-        if version == "":
-            version = "latest"
+    choices: tuple = ("0.1", "latest")
+    version = enquiries.choose(choices)
 
     with open("/home/lightowl/docker-compose.yml", "w") as f:
         f.write(j2_template.render({

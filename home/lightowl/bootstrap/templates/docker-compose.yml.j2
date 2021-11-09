@@ -33,10 +33,7 @@ services:
             redis_port: 6379
             debug: 'false'
             influx_url: influxdb
-            influx_token: {{ influx_token }}
             influx_database: lightowl
-            vue_app_base_api:
-            vue_app_websocket_api: 
    
     worker:
         image: raznak/lightowl-worker:{{version}}
@@ -65,7 +62,6 @@ services:
             redis_port: 6379
             debug: 'true'
             influx_url: influxdb
-            influx_token: {{ influx_token }}
             influx_database: lightowl
 
     haproxy:
@@ -123,10 +119,6 @@ services:
             - /proc:/hostfs/proc:ro
             - /sys:/hostfs/sys:ro
             - /var/run/utmp:/var/run/utmp:ro
-        environment:
-            - DOCKER_INFLUXDB_INIT_ORG=lightowl
-            - DOCKER_INFLUXDB_INIT_BUCKET=lightowlbucket
-            - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=influxtoken
         depends_on:
             - influxdb
             - rabbitmq
@@ -141,16 +133,16 @@ services:
             - /etc/ssl/lightowl:/etc/ssl/lightowl
             - influxdata:/var/lib/influxdb:rw
 
-    grafana:
-        image: grafana/grafana
-        ports:
-            - 3000:3000
-        depends_on: 
-            - influxdb
-        volumes:
-            - grafanadata://var/lib/grafana
-            - /home/grafana:/etc/grafana
-            - /etc/ssl/lightowl/:/etc/ssl/lightowl/
+    # grafana:
+    #     image: grafana/grafana
+    #     ports:
+    #         - 3000:3000
+    #     depends_on: 
+    #         - influxdb
+    #     volumes:
+    #         - grafanadata://var/lib/grafana
+    #         - /home/grafana:/etc/grafana
+    #         - /etc/ssl/lightowl/:/etc/ssl/lightowl/
 
 volumes:
     grafanadata:
