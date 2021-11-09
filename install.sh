@@ -33,15 +33,32 @@ fi
 /usr/bin/echo ""
 /usr/bin/echo -n "Admin Password: " 
 read -s password
+/usr/bin/echo -n "Confirm Password: "
+read -s confirm_password
 /usr/bin/echo ""
 
-ip_address=null
-ip_valid=false
-while [[ ip_valid -eq false ]]
+while [[ true ]]
 do
-   if [[ $ip =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    if [[ "$password" == "$confirm_password" ]]
+    then
+        break
+    fi
+
+   echo "Passwords mismatch"
+   echo -n "Admin Password: " 
+   read -s password
+   echo -n "Confirm Password: "
+   read -s confirm_password
+   echo ""
+done
+
+ip_address=null
+while [[ true ]]
+do
+   if [[ $ip_address =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
       break
    else
+      /usr/bin/echo "Invalid IP Address"
       /usr/bin/echo -n "IP Address: "
       read ip_address
    fi
