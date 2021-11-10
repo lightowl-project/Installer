@@ -10,7 +10,7 @@ def rabbitmq(password: str):
     with open("/home/lightowl/bootstrap/templates/definitions.json.j2", 'r') as f:
         template: str = f.read()
 
-    j2_template = jinja2.Template(template, autoescape=True)
+    j2_template = jinja2.Template(template)
     salt = os.urandom(4)
 
     tmp = salt + password.encode("utf-8")
@@ -29,7 +29,7 @@ def telegraf_input(password: str):
     with open("/home/lightowl/bootstrap/templates/lightowl.conf.j2", 'r') as f:
         template: str = f.read()
 
-    j2_template = jinja2.Template(template, autoescape=True)
+    j2_template = jinja2.Template(template)
     with open("/home/telegraf/telegraf.d/lightowl.conf", "w") as f:
         f.write(j2_template.render({
             "password": password
@@ -40,7 +40,7 @@ def lightowl(password: str):
     with open("/home/lightowl/bootstrap/templates/docker-compose.yml.j2", "r") as f:
         template: str = f.read()
 
-    j2_template = jinja2.Template(template, autoescape=True)
+    j2_template = jinja2.Template(template)
 
     choices: tuple = ("latest", "0.1")
     version = enquiries.choose("Version to install: ", choices)
@@ -55,7 +55,7 @@ def telegraf_output():
     with open("/home/lightowl/bootstrap/templates/telegraf.conf.j2", "r") as f:
         template: str = f.read()
 
-    j2_template = jinja2.Template(template, autoescape=True)
+    j2_template = jinja2.Template(template)
     with open("/home/telegraf/telegraf.conf", "w") as f:
         f.write(j2_template.render())
 
