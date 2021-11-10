@@ -1,7 +1,7 @@
 version: "3"
 services:
     lightowl:
-        image: raznak/lightowl-server:latest
+        image: lightowlproject/server:latest
         restart: on-failure
         command: >
              /bin/bash -c "
@@ -37,7 +37,7 @@ services:
             vue_app_websocket_api: 
    
     worker:
-        image: raznak/lightowl-worker:latest
+        image: lightowlproject/worker:latest
         volumes:
             - /etc/ssl/lightowl/:/etc/ssl/lightowl/
         command: >
@@ -103,7 +103,7 @@ services:
             - 15672:15672
     
     collector:
-        image: raznak/lightowl-collector:latest
+        image: lightowlproject/collector:latest
         command: >
              /bin/bash -c "
                 while ! nc -z rabbitmq 5672;
