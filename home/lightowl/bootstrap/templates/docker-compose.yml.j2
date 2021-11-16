@@ -34,6 +34,7 @@ services:
             debug: 'false'
             influx_url: influxdb
             influx_database: lightowl
+            version: {{version}}
    
     worker:
         image: lightowlproject/worker:{{version}}
@@ -63,6 +64,7 @@ services:
             debug: 'true'
             influx_url: influxdb
             influx_database: lightowl
+            version: {{version}}
 
     haproxy:
         image: lightowl-haproxy

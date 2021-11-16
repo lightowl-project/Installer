@@ -77,6 +77,7 @@ done
 /usr/sbin/addgroup lightowl
 sha_password=$(/usr/bin/openssl passwd -1 ${password})
 rabbit_password=$(/usr/bin/date +%s | /usr/bin/sha256sum | /usr/bin/base64 | /usr/bin/head -c 32 ; /usr/bin/echo)
+lightowl_token=$(/usr/bin/date +%s | /usr/bin/sha256sum | /usr/bin/base64 | /usr/bin/head -c 32 ; /usr/bin/echo)
 
 /usr/sbin/useradd -m -p $sha_password -s /bin/bash -g sudo lightowl
 /usr/sbin/usermod -aG docker lightowl
@@ -112,7 +113,21 @@ do
 done
 
 ## Configure LightOwl Superuser
-/usr/bin/docker exec lightowl_lightowl_1 python3 /app/scripts/bootstrap.py $password $ip_address $influx_token
+/usr/bin/docker exec lightowl_lightowl_1 python3 /app/scripts/bootstrap.py $password $ip_address $lightowl_token
 
+# Now we can install local agent
+cd /tmp/
+/usr/bin/wget https://lightowl.io/download/ubuntu-agent/?wpdmdl=1039&masterkey=619232cce3f21
+
+/usr/bin/chmod +x ./lightowl-agent-ubuntu.run
+./lightowl-agent-ubuntu.run $ip_address $lightowl_token
+
+/usr/bin/echo ""
+/usr/bin/echo "
+██      ██  ██████  ██   ██ ████████  ██████  ██     ██ ██      
+██      ██ ██       ██   ██    ██    ██    ██ ██     ██ ██      
+██      ██ ██   ███ ███████    ██    ██    ██ ██  █  ██ ██      
+██      ██ ██    ██ ██   ██    ██    ██    ██ ██ ███ ██ ██      
+███████ ██  ██████  ██   ██    ██     ██████   ███ ███  ███████"
 /usr/bin/echo ""
 /usr/bin/echo "LightOwl is now installed. Go to https://${ip_address}"
