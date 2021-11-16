@@ -122,6 +122,10 @@ cd /tmp/
 /usr/bin/chmod +x ./lightowl-agent-ubuntu.run
 ./lightowl-agent-ubuntu.run $ip_address $lightowl_token
 
+# Allow telegraf to collect docker metrics
+/usr/sbin/adduser telegraf docker
+service telegraf restart
+
 /usr/bin/echo ""
 /usr/bin/echo "
 ██      ██  ██████  ██   ██ ████████  ██████  ██     ██ ██      
