@@ -136,20 +136,7 @@ services:
             - /etc/ssl/lightowl:/etc/ssl/lightowl
             - influxdata:/var/lib/influxdb:rw
 
-    # grafana:
-    #     image: grafana/grafana
-    #     ports:
-    #         - 3000:3000
-    #     depends_on: 
-    #         - influxdb
-    #     volumes:
-    #         - grafanadata://var/lib/grafana
-    #         - /home/grafana:/etc/grafana
-    #         - /etc/ssl/lightowl/:/etc/ssl/lightowl/
-
 volumes:
-    grafanadata:
-        driver: local
     mongodata:
         driver: local
     influxdata:
