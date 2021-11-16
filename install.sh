@@ -117,7 +117,7 @@ done
 
 # Now we can install local agent
 cd /tmp/
-/usr/bin/wget -O ./lightowl-agent-ubunutu.run "https://lightowl.io/download/ubuntu-agent/?wpdmdl=1039&masterkey=619232cce3f21"
+/usr/bin/wget -O ./lightowl-agent-ubuntu.run "https://lightowl.io/download/ubuntu-agent/?wpdmdl=1039&masterkey=619232cce3f21"
 
 /usr/bin/chmod +x ./lightowl-agent-ubuntu.run
 ./lightowl-agent-ubuntu.run $ip_address $lightowl_token
