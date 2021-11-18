@@ -2,7 +2,7 @@ version: "3"
 services:
     lightowl:
         image: lightowlproject/server:latest
-        restart: on-failure
+        restart: always
         command: >
              /bin/bash -c "
                 while ! nc -z rabbitmq 5672;
@@ -37,6 +37,7 @@ services:
    
     worker:
         image: lightowlproject/worker:latest
+        restart: always
         volumes:
             - /etc/ssl/lightowl/:/etc/ssl/lightowl/
         command: >
@@ -66,12 +67,13 @@ services:
 
     haproxy:
         image: lightowl-haproxy
+        restart: always
         build:
             context: /home/haproxy/
             dockerfile: /home/haproxy/dockerfile
         ports:
+            - 127.0.0.1:1936:1936
             - 5671:5671
-            - 1936:1936
             - 443:443
             - 80:80
         volumes:
@@ -82,21 +84,23 @@ services:
     
     mongo:
         image: mongo:4.4
-        hostname: mongodb.lightowl
+        restart: always
         volumes:
             - mongodata:/data/db
         ports:
-            - 27017:27017
+            - 127.0.0.1:27017:27017
     
     redis:
         image: redis
+        restart: always
         volumes:
             - redis_data:/data
         ports:
-            - 6379:6379
+            - 127.0.0.1:6379:6379
 
     rabbitmq:
         image: lightowl_rabbitmq
+        restart: always
         build:
             context: /home/rabbitmq/
             dockerfile: /home/rabbitmq/rabbitmq.dockerfile
@@ -105,10 +109,11 @@ services:
         depends_on: 
             - influxdb
         ports:
-            - 15672:15672
+            - 127.0.0.1:15672:15672
     
     collector:
         image: lightowlproject/collector:latest
+        restart: always
         command: >
              /bin/bash -c "
                 while ! nc -z rabbitmq 5672;
@@ -131,7 +136,7 @@ services:
 
     influxdb:
         image: influxdb:1.8
-        hostname: influxdb.lightowl
+        restart: always
         environment: 
             - INFLUXDB_DB=lightowl
         volumes:
@@ -139,7 +144,7 @@ services:
             - /etc/ssl/lightowl:/etc/ssl/lightowl
             - influxdata:/var/lib/influxdb:rw
         ports:
-            - 8086:8086
+            - 127.0.0.1:8086:8086
 
 volumes:
     mongodata:

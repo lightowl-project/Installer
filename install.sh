@@ -19,7 +19,7 @@ fi
 /usr/bin/apt update
 /usr/bin/apt upgrade -y
 
-/usr/bin/apt install -y curl # python3-pip python3-m2crypto
+/usr/bin/apt install -y curl
 /usr/bin/curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 /usr/bin/chmod +x /usr/local/bin/docker-compose
 
