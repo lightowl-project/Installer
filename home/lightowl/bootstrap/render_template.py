@@ -42,14 +42,9 @@ def lightowl(password: str):
 
     j2_template = jinja2.Template(template)
 
-    choices: tuple = ("latest", "0.1")
-    print("")
-    version = enquiries.choose("Version to install: ", choices)
-
     with open("/home/lightowl/docker-compose.yml", "w") as f:
         f.write(j2_template.render({
-            "rabbit_password": password,
-            "version": version
+            "rabbit_password": password
         }))
 
 def telegraf_output():

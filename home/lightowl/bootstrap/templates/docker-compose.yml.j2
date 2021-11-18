@@ -1,7 +1,7 @@
 version: "3"
 services:
     lightowl:
-        image: lightowlproject/server:{{version}}
+        image: lightowlproject/server:latest
         restart: on-failure
         command: >
              /bin/bash -c "
@@ -34,10 +34,9 @@ services:
             debug: 'false'
             influx_url: influxdb
             influx_database: lightowl
-            version: {{version}}
    
     worker:
-        image: lightowlproject/worker:{{version}}
+        image: lightowlproject/worker:latest
         volumes:
             - /etc/ssl/lightowl/:/etc/ssl/lightowl/
         command: >
@@ -64,7 +63,6 @@ services:
             debug: 'true'
             influx_url: influxdb
             influx_database: lightowl
-            version: {{version}}
 
     haproxy:
         image: lightowl-haproxy
@@ -73,6 +71,7 @@ services:
             dockerfile: /home/haproxy/dockerfile
         ports:
             - 5671:5671
+            - 1936:1936
             - 443:443
             - 80:80
         volumes:
@@ -86,11 +85,15 @@ services:
         hostname: mongodb.lightowl
         volumes:
             - mongodata:/data/db
+        ports:
+            - 27017:27017
     
     redis:
         image: redis
         volumes:
             - redis_data:/data
+        ports:
+            - 6379:6379
 
     rabbitmq:
         image: lightowl_rabbitmq
@@ -105,7 +108,7 @@ services:
             - 15672:15672
     
     collector:
-        image: lightowlproject/collector:{{version}}
+        image: lightowlproject/collector:latest
         command: >
              /bin/bash -c "
                 while ! nc -z rabbitmq 5672;
@@ -135,6 +138,8 @@ services:
             - /home/influxdb/influxdb.conf:/etc/influxdb/influxdb.conf:ro
             - /etc/ssl/lightowl:/etc/ssl/lightowl
             - influxdata:/var/lib/influxdb:rw
+        ports:
+            - 8086:8086
 
 volumes:
     mongodata:
