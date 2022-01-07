@@ -115,7 +115,7 @@ cd /home/lightowl
 
 until /usr/bin/curl -s -f -k -o /dev/null "https://127.0.0.1/docs"
 do
-    /usr/bin/echo "Waiting"
+    /usr/bin/echo "Waiting for LightOwl to be UP"
    /usr/bin/sleep 1;
 done
 

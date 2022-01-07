@@ -46,7 +46,7 @@ services:
                 do
                     sleep 2;
                 done;
-                celery worker -A worker -l info"
+                celery -A worker worker -l info"
         depends_on:
             - mongo
             - rabbitmq
@@ -133,6 +133,7 @@ services:
         depends_on:
             - influxdb
             - rabbitmq
+            - haproxy
 
     influxdb:
         image: influxdb:1.8
