@@ -1,7 +1,7 @@
 version: "3"
 services:
     lightowl:
-        image: lightowlproject/server:latest
+        image: lightowlproject/server:{{version}}
         restart: always
         command: >
              /bin/bash -c "
@@ -23,6 +23,7 @@ services:
             timeout: 10s
             retries: 3
         environment: 
+            version: {{version}}
             mongodb_url: mongo
             mongodb_database: lightowl
             rabbitmq_url: rabbitmq
@@ -36,7 +37,7 @@ services:
             influx_database: lightowl
    
     worker:
-        image: lightowlproject/worker:latest
+        image: lightowlproject/worker:{{version}}
         restart: always
         volumes:
             - /etc/ssl/lightowl/:/etc/ssl/lightowl/
@@ -52,6 +53,7 @@ services:
             - rabbitmq
             - influxdb
         environment: 
+            version: {{version}}
             mongodb_url: mongo
             mongodb_database: lightowl
             mongodb_ssl: 'true'
@@ -112,7 +114,7 @@ services:
             - 127.0.0.1:15672:15672
     
     collector:
-        image: lightowlproject/collector:latest
+        image: lightowlproject/collector:{{version}}
         restart: always
         command: >
              /bin/bash -c "

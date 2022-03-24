@@ -69,7 +69,7 @@ done
 /usr/bin/apt update
 /usr/bin/apt upgrade -y
 
-/usr/bin/apt install -y curl
+/usr/bin/apt install -y curl jq
 /usr/bin/curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 /usr/bin/chmod +x /usr/local/bin/docker-compose
 
@@ -80,6 +80,9 @@ else
    exit 1
 fi
 
+# Get latest version from LightOwl server
+version=$(curl -s "https://version.lightowl.io/last" | jq '.version' | sed 's/"//g')
+echo $version > /home/lightowl/version
 
 /usr/sbin/addgroup lightowl
 sha_password=$(/usr/bin/openssl passwd -1 ${password})
@@ -103,7 +106,7 @@ cd /home/lightowl
    -v /etc/ssl/lightowl:/etc/ssl/lightowl \
    --name lightowl_install \
    lightowl:install \
-   bash /home/lightowl/bootstrap/bootstrap.sh $rabbit_password $ip_address
+   bash /home/lightowl/bootstrap/bootstrap.sh $rabbit_password $ip_address $version
 
 # Fix rights
 /usr/bin/chown -R lightowl:lightowl /home/haproxy
@@ -141,4 +144,4 @@ service telegraf restart
 ██      ██ ██    ██ ██   ██    ██    ██    ██ ██ ███ ██ ██      
 ███████ ██  ██████  ██   ██    ██     ██████   ███ ███  ███████"
 /usr/bin/echo ""
-/usr/bin/echo "LightOwl is now installed. Go to https://${ip_address}"
+/usr/bin/echo "LightOwl v$version is now installed. Go to https://${ip_address}"

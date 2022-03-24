@@ -3,7 +3,6 @@ import sys
 import jinja2
 import base64
 import hashlib
-import enquiries
 
 
 def rabbitmq(password: str):
@@ -36,7 +35,7 @@ def telegraf_input(password: str):
         }))
 
 
-def lightowl(password: str):
+def lightowl(password: str, version: str):
     with open("/home/lightowl/bootstrap/templates/docker-compose.yml.j2", "r") as f:
         template: str = f.read()
 
@@ -44,7 +43,8 @@ def lightowl(password: str):
 
     with open("/home/lightowl/docker-compose.yml", "w") as f:
         f.write(j2_template.render({
-            "rabbit_password": password
+            "rabbit_password": password,
+            "version": version
         }))
 
 def telegraf_output():
@@ -58,8 +58,9 @@ def telegraf_output():
 
 if __name__ == "__main__":
     password: str = sys.argv[1]
+    version: str = sys.argv[2]
  
     rabbitmq(password)
     telegraf_input(password)
-    lightowl(password)
+    lightowl(password, version)
     telegraf_output()
